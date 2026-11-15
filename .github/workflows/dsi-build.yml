@@ -1,0 +1,36 @@
+name: Build DSi .nds
+
+on:
+  push:
+    branches: [ dsi-port, main ]
+    paths:
+      - 'dsi/**'
+      - '.github/workflows/dsi-build.yml'
+  workflow_dispatch: {}
+
+jobs:
+  build:
+    runs-on: ubuntu-latest
+    container:
+      image: skylyrac/blocksds:slim-latest
+    env:
+      BLOCKSDS: /opt/blocksds/core
+    steps:
+      - uses: actions/checkout@v4
+
+      - name: Fetch vendored decoder header (minimp3)
+        run: |
+          cd dsi
+          sh tools/get_deps.sh
+
+      - name: Build project_noise_dsi.nds
+        run: |
+          cd dsi
+          make
+
+      - name: Upload .nds artifact
+        uses: actions/upload-artifact@v4
+        with:
+          name: project_noise_dsi
+          path: dsi/project_noise_dsi.nds
+          if-no-files-found: error
