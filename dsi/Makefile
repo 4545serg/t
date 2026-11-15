@@ -46,17 +46,30 @@ _TEMPLATE_CANDIDATES := \
     $(BLOCKSDS)/sys/default_makefiles/rom_arm9/Makefile.arm9 \
     $(BLOCKSDS)/sys/default_makefiles/rom_arm9/Makefile \
     $(BLOCKSDS)/sys/default_makefiles/rom_arm9_only/Makefile.arm9 \
-    $(BLOCKSDS)/sys/default_makefiles/rom_arm9_only/Makefile
+    $(BLOCKSDS)/sys/default_makefiles/rom_arm9_only/Makefile \
+    $(BLOCKSDS)/templates/rom_arm9/Makefile.arm9 \
+    $(BLOCKSDS)/templates/rom_arm9/Makefile \
+    $(BLOCKSDS)/templates/rom_arm9_only/Makefile.arm9 \
+    $(BLOCKSDS)/templates/rom_arm9_only/Makefile
 _TEMPLATE := $(firstword $(wildcard $(_TEMPLATE_CANDIDATES)))
 
+# If none of the fixed guesses above exist, search the ENTIRE BLOCKSDS
+# tree for the right file by name instead of assuming any particular
+# subdirectory structure - this is what actually found the real path
+# last time the fixed guesses were wrong, so it's the fallback now
+# rather than another hardcoded guess.
 ifeq ($(_TEMPLATE),)
-$(info Looked for an ARM9-only BlocksDS template at:)
-$(foreach p,$(_TEMPLATE_CANDIDATES),$(info   $(p)))
-$(info None of those exist. Here is what IS under $(BLOCKSDS)/sys/default_makefiles/:)
-$(info $(shell ls -la $(BLOCKSDS)/sys/default_makefiles/ 2>&1))
-$(info And here is what's one level deeper, in case the right file is a template folder away:)
-$(info $(shell find $(BLOCKSDS)/sys/default_makefiles/ -maxdepth 2 2>&1))
-$(error Could not find a matching BlocksDS template Makefile - see the directory listing above for the real path, then update _TEMPLATE_CANDIDATES in dsi/Makefile to match it)
+_FOUND := $(shell find $(BLOCKSDS) -iname 'Makefile.arm9' 2>/dev/null)
+_TEMPLATE := $(firstword $(_FOUND))
+endif
+
+ifeq ($(_TEMPLATE),)
+$(info BLOCKSDS = $(BLOCKSDS))
+$(info Contents of $(BLOCKSDS):)
+$(info $(shell ls -la $(BLOCKSDS) 2>&1))
+$(info Full recursive search of $(BLOCKSDS) for anything named like a template:)
+$(info $(shell find $(BLOCKSDS) -iname '*rom_arm9*' -o -iname 'Makefile.arm9' 2>&1))
+$(error Could not find a BlocksDS ARM9-only template Makefile anywhere under $(BLOCKSDS) - see the directory listing above for the real path, then update _TEMPLATE_CANDIDATES in dsi/Makefile to match it)
 endif
 
 include $(_TEMPLATE)
